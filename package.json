@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "reffy": "^13.0.0",
+    "web-specs": "^2.56.0"
+  }
+}
