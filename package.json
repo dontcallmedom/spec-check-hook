@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@octokit/rest": "^19.0.7",
     "reffy": "^13.0.0",
     "web-specs": "^2.56.0"
   }
