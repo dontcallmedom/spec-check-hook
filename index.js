@@ -16,7 +16,7 @@ if (require.main === module) {
   
   const webrefPath = process.argv[3];
   parsePR(repoFullName, prNumber, GH_TOKEN)
-    .then(({spec, link: updatedSpecUrl}) => listRemovedTargets(spec, updatedSpecUrl, webrefPath))
+    .then(spec => listRemovedTargets(spec, webrefPath))
     .then(list => console.log(list)).catch(err => {
       console.error(`Failed:`);
       console.trace(err);
