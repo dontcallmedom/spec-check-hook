@@ -6,9 +6,22 @@
       "shortname": "single-page",
       "nightly": {
 	"url": "https://example.com/single-page",
-	"shortname": "single-page"
+	"shortname": "single-page",
+	"source_path": "test.bs",
+	"repository": "https://github.com/acme/repo"
       },
       "ids": "ids/single-page.json"
+    },
+    {
+      "url": "https://example.com/whatwg-single-page",
+      "title": "Single-page WHAWG spec",
+      "shortname": "whatwg-single-page",
+      "nightly": {
+	"url": "https://example.com/whatwg-single-page",
+	"shortname": "whatwg-single-page",
+	"source_path": "test.html",
+	"repository": "https://github.com/whatwg/reponame"
+      }
     },
     {
       "url": "https://example.com/multi-page/",
@@ -16,6 +29,8 @@
       "shortname": "multi-page",
       "nightly": {
 	"url": "https://example.com/multi-page/",
+	"source_path": "source",
+	"repository": "https://github.com/whatwg/reponame-multi",
 	"pages": [
 	  "https://example.com/multi-page/subpage.html",
 	  "https://example.com/multi-page/subpage2.html"
