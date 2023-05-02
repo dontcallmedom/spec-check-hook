@@ -1,0 +1,39 @@
+{
+  "results": [
+    {
+      "url": "https://example.com/single-page",
+      "title": "Single-page spec",
+      "shortname": "single-page",
+      "nightly": {
+	"url": "https://example.com/single-page",
+	"shortname": "single-page"
+      },
+      "ids": "ids/single-page.json"
+    },
+    {
+      "url": "https://example.com/multi-page/",
+      "title": "Multi-page spec",
+      "shortname": "multi-page",
+      "nightly": {
+	"url": "https://example.com/multi-page/",
+	"pages": [
+	  "https://example.com/multi-page/subpage.html",
+	  "https://example.com/multi-page/subpage2.html"
+	],
+	"shortname": "multi-page"
+      },
+      "ids": "ids/multi-page.json"
+    },
+
+    {
+      "title": "Specs with links",
+      "url": "https://example.com/specs/linking-spec/",
+      "shortname": "linking-spec",
+      "nightly": {
+	"url": "https://example.com/specs/linking-spec/",
+	"shortname": "linking-spec"
+      },
+      "links": "links/linking-spec.json"
+    }
+  ]
+}

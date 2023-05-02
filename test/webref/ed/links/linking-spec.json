@@ -1,0 +1,27 @@
+{
+  "spec": {
+    "title": "Linking spec",
+    "url": "http://example.com/specs/linking-spec/"
+  },
+  "links": {
+    "https://example.com/single-page": {
+      "anchors": [
+	"valid1",
+	"valid2"
+      ]
+    },
+    "https://example.com/multi-page/subpage.html": {
+      "anchors": [
+	"valid1",
+	"valid2"
+      ]
+    },
+    "https://example.com/multi-page/subpage2.html": {
+      "anchors": [
+	"valid1",
+	"valid2"
+      ]
+    }
+
+  }
+}

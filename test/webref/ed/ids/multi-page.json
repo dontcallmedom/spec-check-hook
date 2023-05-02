@@ -1,0 +1,13 @@
+{
+  "spec": {
+    "title": "Multi-page spec",
+    "url": "https://example.com/multi-page/"
+  },
+  "ids": [
+    "https://example.com/multi-page/subpage.html#valid1",
+    "https://example.com/multi-page/subpage.html#valid2",
+    "https://example.com/multi-page/subpage2.html#valid1",
+    "https://example.com/multi-page/subpage2.html#valid2"
+
+  ]
+}

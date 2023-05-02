@@ -1,0 +1,10 @@
+{
+  "spec": {
+    "title": "Single page spec",
+    "url": "https://example.com/single-page"
+  },
+  "ids": [
+    "https://example.com/single-page#valid1",
+    "https://example.com/single-page#valid2"
+  ]
+}
