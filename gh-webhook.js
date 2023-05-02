@@ -59,7 +59,7 @@ handler.on('pull_request', async function({payload}) {
   }
       let targets = [], spec;
   try {
-    spec =  await parsePR(payload.repository.full_name, payload.pull_request.number, GH_TOKEN);
+    spec =  await parsePR(payload.repository.full_name, payload.pull_request.number, GH_TOKEN, WEBREF_PATH);
 
     if (!spec) {
       return;
