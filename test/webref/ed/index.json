@@ -10,6 +10,9 @@
 	"source_path": "test.bs",
 	"repository": "https://github.com/acme/repo"
       },
+      "crawlCacheInfo": {
+        "lastModified": "Mon, 27 Mar 2023 14:45:14 GMT"
+      },
       "ids": "ids/single-page.json"
     },
     {
@@ -37,6 +40,9 @@
 	  "https://example.com/multi-page/subpage3.html"
 	],
 	"shortname": "multi-page"
+      },
+      "crawlCacheInfo": {
+        "lastModified": "Mon, 27 Mar 2023 14:45:14 GMT"
       },
       "ids": "ids/multi-page.json"
     },
