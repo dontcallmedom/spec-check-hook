@@ -1,82 +1,72 @@
 const {Octokit} = require("@octokit/rest");
 const http = require('http');
-const createHandler = require('github-webhook-handler');
+const { Webhooks, createNodeMiddleware } = require("@octokit/webhooks");
 
 const {listRemovedTargets} = require("./lib/list-removed-targets");
 const {parsePR} = require("./lib/parse-pr");
 const {formatReport} = require("./lib/format-report");
 
-const GH_TOKEN = (() => {
-  try {
-    return require('./config.json').GH_TOKEN;
-  } catch (err) {
-    return process.env.GH_TOKEN;
-  }
-})();
-
-const GH_SECRET = (() => {
-  try {
-    return require('./config.json').GH_SECRET;
-  } catch (err) {
-    return process.env.GH_SECRET;
-  }
-})();
-
-const PORT = (() => {
-  try {
-    return require('./config.json').port;
-  } catch (err) {
-    return process.env.PORT;
-  }
-})() || 8080;
-
-const WEBREF_PATH = (() => {
-  try {
-    return require('./config.json').webref_path;
-  } catch (err) {
-    return process.env.WEBREF_PATH;
-  }
-})();
-
-
-const handler = createHandler({ path: '/webhook', secret: GH_SECRET });
-
-http.createServer(function (req, res) {
-  handler(req, res, function (err) {
-    res.statusCode = 404;
-    res.end('no such location');
+function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
+  const webhooks = new Webhooks({
+    secret: GH_SECRET
   });
-}).listen(PORT);
+  const middleware = createNodeMiddleware(webhooks, { path: "/webhook" });
 
-handler.on('error', function (err) {
-  console.error('Error:', err.message);
-});
+  const server = http.createServer(async function (req, res) {
+    if (await middleware(req, res)) return;
+    res.writeHead(404);
+    res.end();
+  }).listen(PORT);
 
-handler.on('pull_request', async function({payload}) {
-  // We only deal with edits made on the pull request by pr-preview[bot]
-  if (payload.action !== "edited" || !payload.sender || payload.sender.login !== "pr-preview[bot]") {
-    return;
-  }
-      let targets = [], spec;
-  try {
-    spec =  await parsePR(payload.repository.full_name, payload.pull_request.number, GH_TOKEN, WEBREF_PATH);
+  webhooks.onError(function (err) {
+    console.error('Error:', err.message);
+  });
 
-    if (!spec) {
+  webhooks.on('pull_request.edited', async function({payload}) {
+    // We only deal with edits made on the pull request by pr-preview[bot]
+    if (!payload.sender || payload.sender.login !== "pr-preview[bot]") {
       return;
     }
-    targets = await listRemovedTargets(spec, WEBREF_PATH);
-  } catch (err) {
-    console.error("Failed to process " + JSON.stringify(payload, null, 2));
-    console.trace(err);
-  }
+    let targets = [], spec;
+    try {
+      spec =  await parsePR(payload.repository.full_name, payload.pull_request.number, GH_TOKEN, WEBREF_PATH);
+      if (!spec) {
+	return;
+      }
+      targets = await listRemovedTargets(spec, WEBREF_PATH);
+    } catch (err) {
+      console.error("Failed to process " + JSON.stringify(payload, null, 2));
+      console.trace(err);
+      throw(err);
+    }
 
-  if (targets.length) {
-    const octokit = new Octokit({auth: GH_TOKEN});
-    octokit.rest.issues.createComment({
-      owner: payload.repository.owner.login,
-      repo: payload.repository.name,
-      issue_number: payload.pull_request.number,
-      body: formatReport(targets, spec.nightly.origUrl)
+    if (targets.length) {
+      const octokit = new Octokit({auth: GH_TOKEN});
+      await octokit.rest.issues.createComment({
+	owner: payload.repository.owner.login,
+	repo: payload.repository.name,
+	issue_number: payload.pull_request.number,
+	body: formatReport(targets, spec)
       });
-  }
-});
+    }
+  });
+
+  return server;
+}
+
+module.exports = { serve };
+
+if (require.main === module) {
+  const {GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH} = (() => {
+    try {
+      return require('./config.json');
+    } catch (e) {
+      return { GH_TOKEN: process.env.GH_TOKEN,
+	       GH_SECRET: process.env.GH_SECRET,
+	       port: process.env.PORT || 8080,
+	       webref_path: process.env.WEBREF_PATH
+	     };
+    }
+  })();
+  serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH);
+}

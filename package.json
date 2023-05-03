@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@octokit/rest": "^19.0.7",
-    "github-webhook-handler": "^1.0.0",
+    "@octokit/webhooks": "^11.0.0",
     "http-server": "^14.1.1",
     "reffy": "^13.0.0"
   },
