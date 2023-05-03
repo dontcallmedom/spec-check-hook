@@ -28,7 +28,9 @@ let server, req;
 
 const prNumber = 42;
 const testPreviewLink = `https://pr-preview.s3.amazonaws.com/foo/repo/pull/${prNumber}.html`;
-const testWhatwgMultiPreviewLink = `https://whatpr.org/reponame-multi/${prNumber}/index.html`;
+const testWhatwgMultiPreviewLinks = [`https://whatpr.org/reponame-multi/${prNumber}/subpage.html`, `https://whatpr.org/reponame-multi/${prNumber}/subpage2.html`];
+const testWhatwgMultiPreviewIndex = `https://whatpr.org/reponame-multi/${prNumber}/index.html`;
+
 
 async function mockPreviewSpec(link) {
   let scope, localPath;
@@ -38,8 +40,8 @@ async function mockPreviewSpec(link) {
     scope.get('/' + link.split('/').slice(3).join('/'))
       .reply(200, localSpec, { headers: {"Content-Type": "text/html; charset=utf-8"} });
     return;
-  } else if (link.startsWith(baseDirUrl(testWhatwgMultiPreviewLink))) {
-    const basePath = '/' + baseDirUrl(testWhatwgMultiPreviewLink).split('/').slice(3).join('/');
+  } else if (link.startsWith(baseDirUrl(testWhatwgMultiPreviewIndex))) {
+    const basePath = '/' + baseDirUrl(testWhatwgMultiPreviewIndex).split('/').slice(3).join('/');
     const pages = {};
     for (const page of ["index.html", "subpage.html", "subpage2.html"]) {
       pages[page] = await fs.readFile("./test/specs/multi-page/" + page);
@@ -118,19 +120,19 @@ describe("the webhook server", function() {
     assert.deepEqual(ghMock.errors, []);
   });
 
-  it("reacts to a PR edit from pr-preview bot on a multi page spec", async () => {
+  it("reacts to a PR edit from pr-preview bot on a multi page spec, but only on pages listed as changed", async () => {
     const spec = getSpec("multi-page");
-    ghMock.pr("whatwg/reponame-multi", prNumber, testWhatwgMultiPreviewLink, "source");
+    ghMock.pr("whatwg/reponame-multi", prNumber, testWhatwgMultiPreviewLinks, "source");
     ghMock.prComment("whatwg/reponame-multi", prNumber,
 		     formatReport(removedTargets(["https://example.com/multi-page/subpage.html#valid1", "https://example.com/multi-page/subpage2.html#valid2"]), spec));
-    await mockPreviewSpec(testWhatwgMultiPreviewLink);
+    await mockPreviewSpec(testWhatwgMultiPreviewIndex);
     const payload = editPrPayload("pr-preview[bot]", "whatwg/reponame-multi");
     try {
       const res = await setupRequest(req, payload).expect(200);
     } catch (err) {
       assert(false, err);
     }
-    assert.deepEqual(ghMock.errors, []);
+    assert.deepEqual(ghMock.errors, [], "No GH API mocking errors should have happened");
   });
 
   it("ignores other PR edits (not from pr-preview bot)", async () => {

@@ -48,15 +48,15 @@ describe('The targets removal detector', function () {
   it('reports a target removal in a single page spec', async () => {
     const spec = updatedSpec("single-page", `http://localhost:${port}/test/specs/single-page/removed-anchor.html`);
     const results = await listRemovedTargets(spec, './test/webref');
+    assert.deepEqual(results.length, 1, "Received a single report of broken target");
     assert.deepEqual(results[0].links, ["https://example.com/single-page#valid1"]);
-    assert.deepEqual(results.length, 1);
     assert.deepEqual(results[0].spec.url, "https://example.com/specs/linking-spec/");
   });
 
-  it('reports two target removals in a multi page spec', async () => {
+  it('reports four target removals in a multi page spec', async () => {
     const spec = updatedSpec("multi-page", `http://localhost:${port}/test/specs/multi-page/index.html`);
     const results = await listRemovedTargets(spec, './test/webref');
-    assert.deepEqual(results[0].links, ["https://example.com/multi-page/subpage.html#valid1", "https://example.com/multi-page/subpage2.html#valid2"]);
+    assert.deepEqual(results[0].links, ["https://example.com/multi-page/#valid1", "https://example.com/multi-page/subpage.html#valid1", "https://example.com/multi-page/subpage2.html#valid2", "https://example.com/multi-page/subpage3.html#valid1"]);
     assert.deepEqual(results.length, 1);
     assert.deepEqual(results[0].spec.url, "https://example.com/specs/linking-spec/");
   });

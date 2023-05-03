@@ -14,7 +14,7 @@ class GhMock {
 	try {
 	  const parsedBody = JSON.parse(body);
 	  if (parsedBody.body !== reqBody.body) {
-	    this.errors.push(`Request body ${parsedBody.body} differs from expected request body ${reqBody.body}`);
+	    this.errors.push(`Actual request body ${parsedBody.body} differs from expected request body ${reqBody.body}`);
 	  }
 	} catch (err) {
 	  this.errors.push(err);
@@ -36,8 +36,9 @@ class GhMock {
     this.api(`/repos/${repo}/contents/.pr-preview.json`, { content });
   }
 
-  pr(repo, prNumber, previewLink, sourcePath) {
-    this.prAPI(repo, prNumber, `<a href="${previewLink}">Preview</a>`);
+  pr(repo, prNumber, previewLinks, sourcePath) {
+    previewLinks = Array.isArray(previewLinks) ? previewLinks : [previewLinks];
+    this.prAPI(repo, prNumber, `${previewLinks.map(l => `<a href="${l}">Preview</a>`)}`);
     this.prPreviewContent(repo, sourcePath);
   }
 
