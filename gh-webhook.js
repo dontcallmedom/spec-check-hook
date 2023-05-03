@@ -17,7 +17,7 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
     res.writeHead(404);
     res.end();
   }).listen(PORT);
-
+  console.log("serving on " + PORT);
   webhooks.onError(function (err) {
     console.error('Error:', err.message);
   });
@@ -57,7 +57,7 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
 module.exports = { serve };
 
 if (require.main === module) {
-  const {GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH} = (() => {
+  const {GH_TOKEN, GH_SECRET, port, webref_path} = (() => {
     try {
       return require('./config.json');
     } catch (e) {
@@ -68,5 +68,5 @@ if (require.main === module) {
 	     };
     }
   })();
-  serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH);
+  serve(GH_TOKEN, GH_SECRET, port, webref_path);
 }
