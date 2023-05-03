@@ -52,7 +52,7 @@ async function mockPreviewSpec(link) {
   }
 }
 
-const editPrPayload = (sender, repoFullname) => {
+const editPrPayload = (sender, repoFullname, date = new Date()) => {
   return {
     action: "edited",
     number: prNumber,
@@ -64,7 +64,8 @@ const editPrPayload = (sender, repoFullname) => {
       }
     },
     pull_request: {
-      number: prNumber
+      number: prNumber,
+      created_at: JSON.stringify(date)
     },
     sender: {
       login: sender
@@ -133,6 +134,16 @@ describe("the webhook server", function() {
       assert(false, err);
     }
     assert.deepEqual(ghMock.errors, [], "No GH API mocking errors should have happened");
+  });
+
+  it("ignores PR edits from pr-preview bot on pull requests older than the crawled version of the spec", async () => {
+    ghMock.pr("acme/repo", prNumber, testPreviewLink, "test.bs");
+    const payload = editPrPayload("pr-preview[bot]", "acme/repo", new Date("2000-01-01"));
+    try {
+      const res = await setupRequest(req, payload).expect(200);
+    } catch (err) {
+      assert(false, err);
+    }
   });
 
   it("ignores other PR edits (not from pr-preview bot)", async () => {
