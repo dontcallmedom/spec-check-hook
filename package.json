@@ -3,6 +3,7 @@
     "@octokit/rest": "^19.0.7",
     "@octokit/webhooks": "^11.0.0",
     "http-server": "^14.1.1",
+    "jsdom": "^22.0.0",
     "reffy": "^13.0.0"
   },
   "devDependencies": {

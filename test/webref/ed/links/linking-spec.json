@@ -10,6 +10,11 @@
 	"valid2"
       ]
     },
+    "https://example.com/multi-page/": {
+      "anchors": [
+	"valid1"
+      ]
+    },
     "https://example.com/multi-page/subpage.html": {
       "anchors": [
 	"valid1",
@@ -21,7 +26,11 @@
 	"valid1",
 	"valid2"
       ]
+    },
+    "https://example.com/multi-page/subpage3.html": {
+      "anchors": [
+	"valid1"
+      ]
     }
-
   }
 }

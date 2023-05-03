@@ -25,8 +25,8 @@ const prNumber = 42;
 
 const testPreviewLink = `https://pr-preview.s3.amazonaws.com/foo/repo/pull/${prNumber}.html`;
 const testWhatwgPreviewLink = `https://whatpr.org/reponame/${prNumber}.html`;
-const testWhatwgMultiPreviewLink = `https://whatpr.org/reponame-multi/${prNumber}/index.html`;
-
+const testWhatwgMultiPreviewLinks = [`https://whatpr.org/reponame-multi/${prNumber}/subpage.html`, `https://whatpr.org/reponame-multi/${prNumber}/subpage2.html`];
+const testWhatwgMultiPreviewIndex = `https://whatpr.org/reponame-multi/${prNumber}/index.html`;
 
 describe("The PR Parser", () => {
   before(() => {
@@ -49,11 +49,11 @@ describe("The PR Parser", () => {
   });
 
   it("finds a PR preview link for a WHATWG multi-page spec", async () => {
-    ghMock.pr(testWhatwgMultiRepo, prNumber, testWhatwgMultiPreviewLink, "source");
+    ghMock.pr(testWhatwgMultiRepo, prNumber, testWhatwgMultiPreviewLinks, "source");
     const spec = await parsePR(testWhatwgMultiRepo, prNumber, GH_TOKEN, webrefPath);
-    assert.deepEqual(spec?.nightly?.url, testWhatwgMultiPreviewLink);
+    assert.deepEqual(spec?.nightly?.url, testWhatwgMultiPreviewLinks[0]);
     assert.deepEqual(spec?.nightly?.origUrl, "https://example.com/multi-page/");
-
+    assert.deepEqual(spec?.nightly?.pages?.length, testWhatwgMultiPreviewLinks.length - 1);
   });
   it("throws an error when no PR preview link exists", async () => {
     ghMock.pr(testRepo, prNumber, "", "test.bs");

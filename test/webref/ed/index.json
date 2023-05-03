@@ -33,7 +33,8 @@
 	"repository": "https://github.com/whatwg/reponame-multi",
 	"pages": [
 	  "https://example.com/multi-page/subpage.html",
-	  "https://example.com/multi-page/subpage2.html"
+	  "https://example.com/multi-page/subpage2.html",
+	  "https://example.com/multi-page/subpage3.html"
 	],
 	"shortname": "multi-page"
       },
