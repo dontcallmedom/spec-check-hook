@@ -8,28 +8,15 @@ const { parsePR } = require('../lib/parse-pr');
 const  assert = require("assert");
 const { MockAgent, setGlobalDispatcher } = require('undici');
 
+const GhMock = require("./gh-api-mock");
+
 const agent = new MockAgent();
+
+const ghMock = new GhMock(agent);
 
 const webrefPath = "./test/webref";
 const GH_TOKEN = "testToken";
 
-
-
-function ghAPI(path, payload, method = 'GET') {
-  const client = agent.get('https://api.github.com');
-  client.intercept({path, method})
-    .reply(200, payload,  { headers: { 'content-type': 'application/json' } });
-}
-
-function ghPrAPI(repo, pr, body) {
-  ghAPI(`/repos/${repo}/pulls/${pr}`, { body });
-}
-
-function ghPrPreviewContent(repo, source_path) {
-  const prPreview = { source_path };
-  const content = Buffer.from(JSON.stringify(prPreview), 'utf-8').toString('base64');
-  ghAPI(`/repos/${repo}/contents/.pr-preview.json`, { content });
-}
 const testRepo = "acme/repo";
 const testWhatwgRepo = "whatwg/reponame";
 const testWhatwgMultiRepo = "whatwg/reponame-multi";
@@ -48,32 +35,28 @@ describe("The PR Parser", () => {
   });
 
   it("finds a PR preview link for a non-WHATWG single-page spec", async () => {
-    ghPrAPI(testRepo, prNumber, `<a href="${testPreviewLink}">Preview</a>`);
-    ghPrPreviewContent(testRepo, "test.bs");
+    ghMock.pr(testRepo, prNumber, testPreviewLink, "test.bs");
     const spec = await parsePR(testRepo, prNumber, GH_TOKEN, webrefPath);
     assert.deepEqual(spec?.nightly?.url, testPreviewLink);
     assert.deepEqual(spec?.nightly?.origUrl, "https://example.com/single-page");
   });
 
   it("finds a PR preview link for a WHATWG single-page spec", async () => {
-    ghPrAPI(testWhatwgRepo, prNumber, `<a href="${testWhatwgPreviewLink}">Preview</a>`);
-    ghPrPreviewContent(testWhatwgRepo, "test.html");
+    ghMock.pr(testWhatwgRepo, prNumber, testWhatwgPreviewLink, "test.html");
     const spec = await parsePR(testWhatwgRepo, prNumber, GH_TOKEN, webrefPath);
     assert.deepEqual(spec?.nightly?.url, testWhatwgPreviewLink);
     assert.deepEqual(spec?.nightly?.origUrl, "https://example.com/whatwg-single-page");
   });
 
   it("finds a PR preview link for a WHATWG multi-page spec", async () => {
-    ghPrAPI(testWhatwgMultiRepo, prNumber, `<a href="${testWhatwgMultiPreviewLink}">Preview</a>`);
-    ghPrPreviewContent(testWhatwgMultiRepo, "source");
+    ghMock.pr(testWhatwgMultiRepo, prNumber, testWhatwgMultiPreviewLink, "source");
     const spec = await parsePR(testWhatwgMultiRepo, prNumber, GH_TOKEN, webrefPath);
     assert.deepEqual(spec?.nightly?.url, testWhatwgMultiPreviewLink);
     assert.deepEqual(spec?.nightly?.origUrl, "https://example.com/multi-page/");
 
   });
   it("throws an error when no PR preview link exists", async () => {
-    ghPrAPI(testRepo, prNumber, `<a href="">Preview</a>`);
-    ghPrPreviewContent(testRepo, "test.bs");
+    ghMock.pr(testRepo, prNumber, "", "test.bs");
     try {
       const spec = await parsePR(testRepo, prNumber, GH_TOKEN, webrefPath);
     } catch (e) {
@@ -83,8 +66,7 @@ describe("The PR Parser", () => {
     assert(false, "No error thrown when one was expected");
   });
 
-  after(() => {
-    agent.enableNetConnect();
-    agent.deactivate();
+  after(async () => {
+    await agent.close();
   });
 });
