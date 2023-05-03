@@ -15,7 +15,7 @@ if (require.main === module) {
   const [,repoFullName, prNumber] = prURL.match(/https:\/\/github.com\/([^\/]+\/[^\/]+)\/pull\/([0-9]+)/);
   
   const webrefPath = process.argv[3];
-  parsePR(repoFullName, prNumber, GH_TOKEN)
+  parsePR(repoFullName, prNumber, GH_TOKEN, webrefPath)
     .then(spec => listRemovedTargets(spec, webrefPath))
     .then(list => console.log(list)).catch(err => {
       console.error(`Failed:`);

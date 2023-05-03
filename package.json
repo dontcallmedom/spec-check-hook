@@ -1,8 +1,17 @@
 {
   "dependencies": {
     "@octokit/rest": "^19.0.7",
-    "github-webhook-handler": "^1.0.0",
-    "reffy": "^13.0.0",
-    "web-specs": "^2.56.0"
+    "@octokit/webhooks": "^11.0.0",
+    "http-server": "^14.1.1",
+    "reffy": "^13.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^10.2.0",
+    "nock": "^13.3.1",
+    "supertest": "^6.3.3",
+    "undici": "^5.22.0"
+  },
+  "scripts": {
+    "test": "mocha --recursive"
   }
 }
