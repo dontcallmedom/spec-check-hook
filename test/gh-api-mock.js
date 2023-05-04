@@ -26,6 +26,10 @@ class GhMock {
       .reply(200, payload,  { headers: { 'content-type': 'application/json' } });
   }
 
+  user(login) {
+    this.api(`/user`, { login });
+  }
+
   prAPI(repo, pr, body) {
     this.api(`/repos/${repo}/pulls/${pr}`, { body });
   }
@@ -40,6 +44,10 @@ class GhMock {
     previewLinks = Array.isArray(previewLinks) ? previewLinks : [previewLinks];
     this.prAPI(repo, prNumber, `${previewLinks.map(l => `<a href="${l}">Preview</a>`)}`);
     this.prPreviewContent(repo, sourcePath);
+  }
+
+  listComments(repo, issueNumber, comments) {
+    this.api(`/repos/${repo}/issues/${issueNumber}/comments`, comments);
   }
 
   prComment(repo, prNumber, body) {

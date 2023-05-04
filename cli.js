@@ -1,5 +1,5 @@
 const {listRemovedTargets} = require("./lib/list-removed-targets");
-const {parsePR} = require("./lib/parse-pr");
+const Github = require("./lib/github");
 
 if (require.main === module) {
 
@@ -15,7 +15,8 @@ if (require.main === module) {
   const [,repoFullName, prNumber] = prURL.match(/https:\/\/github.com\/([^\/]+\/[^\/]+)\/pull\/([0-9]+)/);
   
   const webrefPath = process.argv[3];
-  parsePR(repoFullName, prNumber, GH_TOKEN, webrefPath)
+  const github = new Github(GH_TOKEN);
+  github.parsePR(repoFullName, prNumber, webrefPath)
     .then(spec => listRemovedTargets(spec, webrefPath))
     .then(list => console.log(list)).catch(err => {
       console.error(`Failed:`);

@@ -3,13 +3,14 @@ const http = require('http');
 const { Webhooks, createNodeMiddleware } = require("@octokit/webhooks");
 
 const {listRemovedTargets} = require("./lib/list-removed-targets");
-const {parsePR} = require("./lib/parse-pr");
+const Github = require("./lib/github");
 const {formatReport} = require("./lib/format-report");
 
 function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
   const webhooks = new Webhooks({
     secret: GH_SECRET
   });
+  const github = new Github(GH_TOKEN);
   const middleware = createNodeMiddleware(webhooks, { path: "/webhook" });
 
   const server = http.createServer(async function (req, res) {
@@ -29,7 +30,7 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
     }
     let targets = [], spec;
     try {
-      spec =  await parsePR(payload.repository.full_name, payload.pull_request.number, GH_TOKEN, WEBREF_PATH);
+      spec =  await github.parsePR(payload.repository.full_name, payload.pull_request.number, WEBREF_PATH);
       if (!spec) {
 	return;
       }
@@ -46,15 +47,12 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
       throw(err);
     }
 
-    if (targets.length) {
-      const octokit = new Octokit({auth: GH_TOKEN});
-      await octokit.rest.issues.createComment({
-	owner: payload.repository.owner.login,
-	repo: payload.repository.name,
-	issue_number: payload.pull_request.number,
-	body: formatReport(targets, spec)
-      });
-    }
+    const existingReport = await github.findReport(payload.repository.full_name, payload.pull_request.number, "removedtargets");
+    if (!existingReport) {
+      if (targets.length) {
+	await github.postComment(payload.repository.full_name, payload.pull_request.number, formatReport(targets, spec));
+      }
+    } // TODO: update report if one exists and its content differs?
   });
 
   return server;
