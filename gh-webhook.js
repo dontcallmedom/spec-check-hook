@@ -6,7 +6,7 @@ const {listRemovedTargets} = require("./lib/list-removed-targets");
 const Github = require("./lib/github");
 const {formatReport} = require("./lib/format-report");
 
-function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
+function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH, experimental) {
   const webhooks = new Webhooks({
     secret: GH_SECRET
   });
@@ -48,9 +48,14 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
     }
 
     const existingReport = await github.findReport(payload.repository.full_name, payload.pull_request.number, "removedtargets");
-    if (!existingReport) {
+    if (!existingReport || experimental) {
       if (targets.length) {
-	await github.postComment(payload.repository.full_name, payload.pull_request.number, formatReport(targets, spec));
+	if (experimental) {
+	  const [repoFullname, issueNumber] = experimental.split("#");
+	  await github.postComment(repoFullname, issueNumber, `[${payload.repository.full_name}#${payload.pull_request.number}](${payload.pull_request.html_url}):\n${formatReport(targets, spec)}`);
+	} else {
+	  await github.postComment(payload.repository.full_name, payload.pull_request.number, formatReport(targets, spec));
+	}
       }
     } // TODO: update report if one exists and its content differs?
   });
@@ -61,16 +66,17 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
 module.exports = { serve };
 
 if (require.main === module) {
-  const {GH_TOKEN, GH_SECRET, port, webref_path} = (() => {
+  const {GH_TOKEN, GH_SECRET, port, webref_path, experimental} = (() => {
     try {
       return require('./config.json');
     } catch (e) {
       return { GH_TOKEN: process.env.GH_TOKEN,
 	       GH_SECRET: process.env.GH_SECRET,
 	       port: process.env.PORT || 8080,
-	       webref_path: process.env.WEBREF_PATH
+	       webref_path: process.env.WEBREF_PATH,
+	       experimental: process.env.EXPERIMENTAL
 	     };
     }
   })();
-  serve(GH_TOKEN, GH_SECRET, port, webref_path);
+  serve(GH_TOKEN, GH_SECRET, port, webref_path, experimental);
 }
