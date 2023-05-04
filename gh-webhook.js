@@ -47,15 +47,12 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH) {
       throw(err);
     }
 
-    if (targets.length) {
-      const octokit = new Octokit({auth: GH_TOKEN});
-      await octokit.rest.issues.createComment({
-	owner: payload.repository.owner.login,
-	repo: payload.repository.name,
-	issue_number: payload.pull_request.number,
-	body: formatReport(targets, spec)
-      });
-    }
+    const existingReport = await github.findReport(payload.repository.full_name, payload.pull_request.number, "removedtargets");
+    if (!existingReport) {
+      if (targets.length) {
+	await github.postComment(payload.repository.full_name, payload.pull_request.number, formatReport(targets, spec));
+      }
+    } // TODO: update report if one exists and its content differs?
   });
 
   return server;
