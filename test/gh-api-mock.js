@@ -34,16 +34,23 @@ class GhMock {
     this.api(`/repos/${repo}/pulls/${pr}`, { body });
   }
 
+  commitDate(repo, sha, date) {
+    this.api(`/repos/${repo}/git/commits/${sha}`, { author: { date } } );
+  }
+
   prPreviewContent(repo, source_path) {
     const prPreview = { source_path };
     const content = Buffer.from(JSON.stringify(prPreview), 'utf-8').toString('base64');
     this.api(`/repos/${repo}/contents/.pr-preview.json`, { content });
   }
 
-  pr(repo, prNumber, previewLinks, sourcePath) {
+  pr(repo, prNumber, previewLinks, sourcePath, sha, date = new Date()) {
     previewLinks = Array.isArray(previewLinks) ? previewLinks : [previewLinks];
     this.prAPI(repo, prNumber, `${previewLinks.map(l => `<a href="${l}">Preview</a>`)}`);
     this.prPreviewContent(repo, sourcePath);
+    if (sha) {
+      this.commitDate(repo, sha, date);
+    }
   }
 
   listComments(repo, issueNumber, comments) {

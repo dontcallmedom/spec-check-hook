@@ -34,9 +34,11 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH, experimental) {
       if (!spec) {
 	return;
       }
-      // skip the event if the pull request is older than the current version
-      // of the spec, to avoid false positives
-      if (spec?.crawlCacheInfo?.lastModified && payload.pull_request.created_at < JSON.stringify(new Date(spec.crawlCacheInfo.lastModified))) {
+
+      // skip the event if the pull request is based on a commit older
+      // than the current version of the spec, to avoid false positives
+      const prDate = await github.getBaseCommitDate(payload.repository.full_name, payload.pull_request.base.sha);
+      if (spec?.crawlCacheInfo?.lastModified && JSON.stringify(prDate) < JSON.stringify(new Date(spec.crawlCacheInfo.lastModified))) {
 	return;
       }
 
