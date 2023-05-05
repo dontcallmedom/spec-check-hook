@@ -28,9 +28,13 @@ These can also be set with environment variables `GH_TOKEN` `WEBREF_PATH` `GH_SE
 node cli.js <url_of_pull_request> <webref_path>
 ```
 
+This writes a JSON report of detected issues on stdout.
+
 ### Github Webhook
 ```sh
 node gh-webhook.js
 ```
 
 Use the resulting URL served by the server as the URL to a Github Webhook (repo- or organization-wide); make sure the payload is sent as `application/json` and that it is configured to send only `pull_request` events (all other events are ignored, so it's best not to send them altogether).
+
+The webhook will then post a comment on pull requests that brings new detectable issues to the said spec
