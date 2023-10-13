@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@js-temporal/polyfill": "^0.4.4",
     "@octokit/rest": "^19.0.7",
     "@octokit/webhooks": "^11.0.0",
     "http-server": "^14.1.1",
