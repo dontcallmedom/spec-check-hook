@@ -5,15 +5,14 @@
 
 const assert = require("assert");
 const fs = require("fs").promises;
-const { MockAgent, setGlobalDispatcher } = require('undici');
-// We need both undici.MockAgent and nock
-// because reffy doesn't use node's fetch yet
-const nock = require("nock");
+const { MockAgent, setGlobalDispatcher, getGlobalDispatcher } = require('undici');
 const request = require('supertest');
 const GhMock = require("./gh-api-mock");
 const { formatReport } = require("../lib/format-report");
 const { baseDirUrl } = require("../lib/util");
 const webhook = require("../gh-webhook");
+
+const origDispatcher = getGlobalDispatcher();
 
 const agent = new MockAgent();
 
@@ -50,15 +49,15 @@ function mockPreviewSpec(link) {
   if (cache[link]) return;
   cache[link] = true;
   if (link === testPreviewLink) {
-    nock('https://pr-preview.s3.amazonaws.com')
-      .get('/' + link.split('/').slice(3).join('/'))
+    agent.get('https://pr-preview.s3.amazonaws.com')
+      .intercept({method: "GET", path: '/' + link.split('/').slice(3).join('/')})
       .reply(200, mockSpecs[link], { headers: {"Content-Type": "text/html; charset=utf-8"} });
     return;
   } else if (link === testWhatwgMultiPreviewIndex) {
     const basePath = '/' + baseDirUrl(testWhatwgMultiPreviewIndex).split('/').slice(3).join('/');
-    const scope = nock('https://whatpr.org');
+    const client = agent.get('https://whatpr.org');
     for (const page of ["subpage.html", "subpage2.html"]) {
-      scope.get(basePath + page)
+      client.intercept({method: "GET", path: basePath + page})
 	.reply(200, mockSpecs[baseDirUrl(testWhatwgMultiPreviewIndex) + page]);
     }
   }
@@ -109,6 +108,7 @@ const removedTargets = (links) => {
   }];
 };
 
+const isOK = res => res.status === 200 || res.status === 202;
 
 describe("the webhook server", function() {
   this.timeout(20000);
@@ -132,7 +132,7 @@ describe("the webhook server", function() {
     mockPreviewSpec(testPreviewLink);
     const payload = editPrPayload("pr-preview[bot]", repo);
     try {
-      const res = await setupRequest(req, payload).expect(200);
+      const res = await setupRequest(req, payload).expect(isOK);
     } catch (err) {
       assert(false, err);
     }
@@ -147,7 +147,7 @@ describe("the webhook server", function() {
     ghMock.listComments(repo, prNumber, [matchingComment]);
     const payload = editPrPayload("pr-preview[bot]", repo);
     try {
-      const res = await setupRequest(req, payload).expect(200);
+      const res = await setupRequest(req, payload).expect(isOK);
     } catch (err) {
       assert(false, err);
     }
@@ -164,7 +164,7 @@ describe("the webhook server", function() {
     mockPreviewSpec(testWhatwgMultiPreviewIndex);
     const payload = editPrPayload("pr-preview[bot]", repo);
     try {
-      const res = await setupRequest(req, payload).expect(200);
+      const res = await setupRequest(req, payload).expect(isOK);
     } catch (err) {
       assert(false, err);
     }
@@ -175,16 +175,33 @@ describe("the webhook server", function() {
     ghMock.pr("acme/repo", prNumber, testPreviewLink, "test.bs", test_sha, new Date("2000-01-01"));
     const payload = editPrPayload("pr-preview[bot]", "acme/repo");
     try {
-      const res = await setupRequest(req, payload).expect(200);
+      const res = await setupRequest(req, payload).expect(isOK);
     } catch (err) {
       assert(false, err);
     }
   });
 
+  it("does not ignore PR edits from pr-preview bot on pull requests older than the crawled version of the spec, but within 15 minutes of that time", async () => {
+    const spec = getSpec("single-page");
+    const repo = spec.nightly.repository.split("/").slice(3).join("/");
+    ghMock.pr("acme/repo", prNumber, testPreviewLink, "test.bs", test_sha, new Date("Mon, 27 Mar 2023 14:40:14 GMT"));
+    ghMock.listComments(repo, prNumber, []);
+    ghMock.prComment(repo, prNumber,
+		     formatReport(removedTargets(["https://example.com/single-page#valid1"]), spec));
+    mockPreviewSpec(testPreviewLink);
+    const payload = editPrPayload("pr-preview[bot]", "acme/repo");
+    try {
+      const res = await setupRequest(req, payload).expect(isOK);
+    } catch (err) {
+      assert(false, err);
+    }
+  });
+
+  
   it("ignores other PR edits (not from pr-preview bot)", async () => {
     const payload = editPrPayload("dontcallmedom", "acme/repo");
     try {
-      const res = await setupRequest(req, payload).expect(200);
+      const res = await setupRequest(req, payload).expect(isOK);
     } catch (err) {
       assert(false, err);
     }
@@ -194,7 +211,7 @@ describe("the webhook server", function() {
     const payload = editPrPayload("pr-preview[bot]", "acme/repo");
     payload.action = "created";
     try {
-      const res = await setupRequest(req, payload).expect(200);
+      const res = await setupRequest(req, payload).expect(isOK);
     } catch (err) {
       assert(false, err);
     }
@@ -203,7 +220,7 @@ describe("the webhook server", function() {
   it("ignores other github events", async () => {
     const payload = editPrPayload("pr-preview[bot]", "acme/repo");
     try {
-      const res = await setupRequest(req, payload, "issue").expect(200);
+      const res = await setupRequest(req, payload, "issue").expect(isOK);
     } catch (err) {
       assert(false, err);
     }
@@ -213,12 +230,12 @@ describe("the webhook server", function() {
   afterEach(() => {
     assert.deepEqual(ghMock.errors, []);
     agent.assertNoPendingInterceptors();
-    assert.deepEqual(nock.pendingMocks(), [], "All nock-mocked requested have been triggered");
   });
 
   after(async () => {
     server.close();
-    agent.close();
+    await agent.close();
+    setGlobalDispatcher(origDispatcher);
 });
 
 });

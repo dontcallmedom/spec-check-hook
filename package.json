@@ -1,14 +1,14 @@
 {
   "dependencies": {
+    "@js-temporal/polyfill": "^0.4.4",
     "@octokit/rest": "^19.0.7",
     "@octokit/webhooks": "^11.0.0",
     "http-server": "^14.1.1",
     "jsdom": "^22.0.0",
-    "reffy": "^13.0.0"
+    "reffy": "^14.1.0"
   },
   "devDependencies": {
     "mocha": "^10.2.0",
-    "nock": "^13.3.1",
     "supertest": "^6.3.3",
     "undici": "^5.22.0"
   },

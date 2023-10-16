@@ -2,6 +2,10 @@ const {Octokit} = require("@octokit/rest");
 const http = require('http');
 const { Webhooks, createNodeMiddleware } = require("@octokit/webhooks");
 
+const { Temporal, toTemporalInstant } = require("@js-temporal/polyfill");
+Date.prototype.toTemporalInstant = toTemporalInstant;
+
+
 const {listRemovedTargets} = require("./lib/list-removed-targets");
 const Github = require("./lib/github");
 const {formatReport} = require("./lib/format-report");
@@ -35,13 +39,18 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH, experimental) {
 	return;
       }
 
-      // skip the event if the pull request is based on a commit older
-      // than the current version of the spec, to avoid false positives
-      const prDate = await github.getBaseCommitDate(payload.repository.full_name, payload.pull_request.base.sha);
-      if (spec?.crawlCacheInfo?.lastModified && JSON.stringify(prDate) < JSON.stringify(new Date(spec.crawlCacheInfo.lastModified))) {
-	return;
+      // skip the event if the pull request is based on a commit 15 minutes older
+      // than the current version of the spec, to avoid false positives (while
+      // taking into account the delay between a commit and the last-modified 
+      // date due to spec generation time)
+      if (spec?.crawlCacheInfo?.lastModified) {
+        const prDate = await github.getBaseCommitDate(payload.repository.full_name, payload.pull_request.base.sha);
+        const lmDate = (new Date(spec.crawlCacheInfo.lastModified)).toTemporalInstant();
+        // 15 minutes buffer to account for spec generation
+        if (lmDate.since(prDate, { largestUnit: 'minute'} ).minutes > 15) {
+	  return;
+        }
       }
-
       targets = await listRemovedTargets(spec, WEBREF_PATH);
     } catch (err) {
       console.error("Failed to process " + JSON.stringify(payload, null, 2));
@@ -49,17 +58,17 @@ function serve(GH_TOKEN, GH_SECRET, PORT, WEBREF_PATH, experimental) {
       throw(err);
     }
 
-    const existingReport = await github.findReport(payload.repository.full_name, payload.pull_request.number, "removedtargets");
-    if (!existingReport || experimental) {
-      if (targets.length) {
-	if (experimental) {
-	  const [repoFullname, issueNumber] = experimental.split("#");
-	  await github.postComment(repoFullname, issueNumber, `[${payload.repository.full_name}#${payload.pull_request.number}](${payload.pull_request.html_url}):\n${formatReport(targets, spec)}`);
-	} else {
+    if (targets.length) {
+      if (experimental) {
+	const [repoFullname, issueNumber] = experimental.split("#");
+	await github.postComment(repoFullname, issueNumber, `[${payload.repository.full_name}#${payload.pull_request.number}](${payload.pull_request.html_url}):\n${formatReport(targets, spec)}`);
+      } else {
+        const existingReport = await github.findReport(payload.repository.full_name, payload.pull_request.number, "removedtargets");
+        if (!existingReport) {
 	  await github.postComment(payload.repository.full_name, payload.pull_request.number, formatReport(targets, spec));
-	}
-      }
-    } // TODO: update report if one exists and its content differs?
+        } // TODO: update report if one exists and its content differs?
+      } 
+    }
   });
 
   return server;

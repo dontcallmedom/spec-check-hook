@@ -6,7 +6,7 @@
 const { baseDirUrl } = require('../lib/util');
 const Github = require('../lib/github');
 const  assert = require("assert");
-const { MockAgent, setGlobalDispatcher } = require('undici');
+const { MockAgent, setGlobalDispatcher, getGlobalDispatcher } = require('undici');
 
 const GhMock = require("./gh-api-mock");
 
@@ -29,6 +29,7 @@ const testWhatwgMultiPreviewLinks = [`https://whatpr.org/reponame-multi/${prNumb
 const testWhatwgMultiPreviewIndex = `https://whatpr.org/reponame-multi/${prNumber}/index.html`;
 
 let github;
+const origDispatcher = getGlobalDispatcher();
 
 function setup() {
   agent = new MockAgent();
@@ -42,6 +43,7 @@ async function teardown() {
   assert.deepEqual(ghMock.errors, [], "No GH API mocking errors should have happened");
   agent.assertNoPendingInterceptors();
   await agent.close();
+  setGlobalDispatcher(origDispatcher);
 }
 
 describe("The PR Parser", () => {
@@ -78,7 +80,7 @@ describe("The PR Parser", () => {
     assert(false, "No error thrown when one was expected");
   });
 
-  after(teardown);
+  after(async () => await teardown());
 });
 
 describe("The Report Finder", () => {
@@ -99,6 +101,6 @@ describe("The Report Finder", () => {
     ]);
     assert.deepEqual(await github.findReport(testRepo, prNumber, "removedtargets"), undefined);
   });
-  after(teardown);
+  after(async() => await teardown());
 });
 
