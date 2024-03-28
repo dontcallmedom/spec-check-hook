@@ -4,33 +4,41 @@
     "url": "http://example.com/specs/linking-spec/"
   },
   "links": {
-    "https://example.com/single-page": {
-      "anchors": [
-	"valid1",
-	"valid2"
-      ]
+    "rawlinks": {
+      "https://example.com/single-page": {
+	"anchors": [
+	  "valid2"
+	]
+      },
+      "https://example.com/multi-page/": {
+	"anchors": [
+	  "valid1"
+	]
+      },
+      "https://example.com/multi-page/subpage.html": {
+	"anchors": [
+	  "valid1",
+	  "valid2"
+	]
+      },
+      "https://example.com/multi-page/subpage2.html": {
+	"anchors": [
+	  "valid1",
+	  "valid2"
+	]
+      },
+      "https://example.com/multi-page/subpage3.html": {
+	"anchors": [
+	  "valid1"
+	]
+      }
     },
-    "https://example.com/multi-page/": {
-      "anchors": [
-	"valid1"
-      ]
-    },
-    "https://example.com/multi-page/subpage.html": {
-      "anchors": [
-	"valid1",
-	"valid2"
-      ]
-    },
-    "https://example.com/multi-page/subpage2.html": {
-      "anchors": [
-	"valid1",
-	"valid2"
-      ]
-    },
-    "https://example.com/multi-page/subpage3.html": {
-      "anchors": [
-	"valid1"
-      ]
+    "autolinks": {
+      "https://example.com/single-page": {
+	"anchors": [
+	  "valid1"
+	]
+      }
     }
   }
 }
